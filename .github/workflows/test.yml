@@ -15,7 +15,10 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
+          # Always use the latest security-patched Go 1.27.x for CI scans.
+          # Upstream go.mod may still pin an older patch version.
+          go-version: '1.27'
+          check-latest: true
           cache: true
 
       - name: Build
