@@ -80,7 +80,7 @@ def prepare_stage(root: Path, destination: Path) -> list[str]:
     # Upstream pins a Go patch release which may contain disclosed security
     # issues. Use the current patch release of the SAME minor Go version
     # during HF builds, without changing upstream files in this fork.
-    builder_pattern = re.compile(r"(?m)^FROM golang:(\\d+\\.\\d+)(?:\\.\\d+)? AS builder$".replace("\\\\", "\\"))
+    builder_pattern = re.compile(r"(?m)^FROM golang:(\d+\.\d+)(?:\.\d+)? AS builder$")
     original, builder_count = builder_pattern.subn(
         lambda match: f"FROM golang:{match.group(1)} AS builder", original
     )
@@ -88,7 +88,7 @@ def prepare_stage(root: Path, destination: Path) -> list[str]:
         raise RuntimeError(
             "Unexpected upstream Go builder image; refusing to deploy."
         )
-    marker = "ENV HOME=/app/data/home\\nENV XDG_CONFIG_HOME=/app/data/config".replace("\\\\", "\\")
+    marker = "ENV HOME=/app/data/home\nENV XDG_CONFIG_HOME=/app/data/config"
     if original.count(marker) != 1:
         raise RuntimeError(
             "Upstream Dockerfile layout changed; update HF environment overlay "
