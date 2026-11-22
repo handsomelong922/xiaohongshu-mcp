@@ -32,7 +32,11 @@ jobs:
       - name: Verify the generated Space source without credentials
         run: |
           python -m py_compile deploy/huggingface/sync_space.py
-          python deploy/huggingface/sync_space.py --dry-run
+          staging_dir="$(mktemp -d)"
+          trap 'rm -rf "$staging_dir"' EXIT
+          python deploy/huggingface/sync_space.py --dry-run --output "$staging_dir/space"
+          grep -Eq '^FROM golang:[0-9]+\.[0-9]+ AS builder$' "$staging_dir/space/Dockerfile"
+          grep -q 'COOKIES_PATH=/data/cookies.json' "$staging_dir/space/Dockerfile"
 
   deploy:
     needs: validate

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -76,6 +77,17 @@ def prepare_stage(root: Path, destination: Path) -> list[str]:
     # the new XHS login state into the pre-existing HF /data persistent volume.
     dockerfile = destination / "Dockerfile"
     original = dockerfile.read_text(encoding="utf-8")
+    # Upstream pins a Go patch release which may contain disclosed security
+    # issues. Use the current patch release of the SAME minor Go version
+    # during HF builds, without changing upstream files in this fork.
+    builder_pattern = re.compile(r"(?m)^FROM golang:(\d+\.\d+)(?:\.\d+)? AS builder$")
+    original, builder_count = builder_pattern.subn(
+        lambda match: f"FROM golang:{match.group(1)} AS builder", original
+    )
+    if builder_count != 1:
+        raise RuntimeError(
+            "Unexpected upstream Go builder image; refusing to deploy."
+        )
     marker = "ENV HOME=/app/data/home\nENV XDG_CONFIG_HOME=/app/data/config"
     if original.count(marker) != 1:
         raise RuntimeError(
